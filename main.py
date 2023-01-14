@@ -96,6 +96,7 @@ import pygame as pygame
 
 running = True
 
+max_enemies = 5
 pygame.init()
 width = 850
 height = 550
@@ -107,6 +108,7 @@ clock = pygame.time.Clock()
 
 all_enemies = {}
 
+score = '0'
 
 
 ############################ Загрузка и обработка изображения ################################
@@ -163,31 +165,60 @@ class Enemy:
             else:
                 pass
 
+    def is_killed(self, mouse_cords):
+        if self.x + 10 < mouse_cords[0] or self.x - 10 > mouse_cords[0] \
+            and self.y + 10 < mouse_cords[1] or self.y - 10 > mouse_cords[1]:
+            print('a')
+
+
 ###################################### Функция Создания Врага ############################################
 def create_enemy(pos):
     global all_enemies
     enemy = Enemy(pos)
-    all_enemies = {enemy: enemy.return_pos()}
+    all_enemies[enemy] = enemy.return_pos()
     return enemy
+
+###################################### Классы Score и High Score ############################################
+def score_tracking():
+    global score
+    global width
+    font = pygame.font.SysFont('arial', 20)
+    string_rendered = font.render(f'Score: {score}', 1, pygame.Color('white'))
+    global screen
+    screen.blit(string_rendered, (5, 0))
+
+
 ###################################### Игровой цикл ############################################
 
 
+# добавить рандомный шанс спавна врагов но ограничить их кол - во на каждом уровне
 
-create_enemy((random.randint(0, width), 100))
 
 LEVEL_INCREASE_EVENT = pygame.USEREVENT + 1
-pygame.time.set_timer(LEVEL_INCREASE_EVENT,  45 * 1000)
-# level = 1
-# каждые 45 секунд повышается уровень сложности - спавнится больше птиц .
+pygame.time.set_timer(LEVEL_INCREASE_EVENT,  10 * 1000)
+level = 1
+#каждые 45 секунд повышается уровень сложности - спавнится больше птиц .
 window = Window()
 running = True
 while running:
     screen.blit(fon, (0, 0))
     for event in pygame.event.get():
         if event.type == LEVEL_INCREASE_EVENT:
-            pass
+            level += 1
+            max_enemies += 2
         if event.type == pygame.QUIT:
             running = False
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            for i in all_enemies:
+                i.is_killed(event.pos)
+    if random.randint(1, 100) >= 95 and max_enemies >= len(all_enemies): #доделать условие с левелом, сделать птиц прогрессивно быстрее
+        a = create_enemy((random.randint(0, width), 10))
+        all_enemies[a] = a.return_pos()
+    else:
+        pass
+
+    score_tracking()
+
     window.update_enemy_location(all_enemies)
     pygame.display.flip()
     clock.tick(fps)
